@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --border: 240 5.9% 90%;
+    --ring: 142.1 76.2% 36.3%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
+}
+
+/* Markdown content styles */
+.markdown-content h1 { @apply text-2xl font-bold mb-4 text-gray-900; }
+.markdown-content h2 { @apply text-xl font-semibold mb-3 text-gray-800; }
+.markdown-content h3 { @apply text-lg font-semibold mb-2 text-gray-700; }
+.markdown-content p { @apply mb-3 leading-relaxed text-gray-700; }
+.markdown-content ul { @apply list-disc pl-6 mb-3; }
+.markdown-content ol { @apply list-decimal pl-6 mb-3; }
+.markdown-content li { @apply mb-1; }
+.markdown-content strong { @apply font-semibold text-gray-900; }
+.markdown-content hr { @apply my-6 border-gray-300; }
+
+.markdown-content table {
+  @apply w-full border-collapse mb-4 text-sm;
+}
+.markdown-content thead th {
+  @apply bg-green-50 text-left px-3 py-2 font-semibold text-gray-700 border border-gray-200;
+}
+.markdown-content tbody td {
+  @apply px-3 py-2 border border-gray-200 text-gray-600;
+}
+.markdown-content tbody tr:hover {
+  @apply bg-gray-50;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }

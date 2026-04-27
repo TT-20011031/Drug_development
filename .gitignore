@@ -1,0 +1,16 @@
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/data/*.db
+backend/data/*.sqlite
+backend/data/*.sqlite3
+backend/.env
+*.pyc
+*.pyo
+*.log
+.DS_Store
+Thumbs.db

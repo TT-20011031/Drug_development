@@ -1,0 +1,14 @@
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:9528
+
+ ✓ Starting...
+ ✓ Ready in 4.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 3s (1000 modules)
+ GET / 200 in 3420ms
+ ✓ Compiled /api/chat in 295ms (500 modules)
+ POST /api/chat 500 in 372ms
+ POST /api/chat 200 in 596ms
+ ✓ Compiled in 607ms (533 modules)
+ POST /api/chat 400 in 67ms
+ POST /api/chat 200 in 709ms
