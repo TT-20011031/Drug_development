@@ -15,6 +15,7 @@ from agents import (
     formula_parser_agent,
     substitution_agent,
     followup_agent,
+    revise_agent,
 )
 
 
@@ -38,6 +39,8 @@ def route_by_intent(state: ProductDevState) -> str:
         return "formula_parser"
     if intent == "followup":
         return "followup"
+    if intent == "revise":
+        return "revise"
     return "requirement"
 
 
@@ -56,6 +59,7 @@ def build_graph() -> StateGraph:
     workflow.add_node("formula_parser", formula_parser_agent)
     workflow.add_node("substitution", substitution_agent)
     workflow.add_node("followup", followup_agent)
+    workflow.add_node("revise", revise_agent)
 
     workflow.set_entry_point("router")
 
@@ -66,6 +70,7 @@ def build_graph() -> StateGraph:
             "requirement": "requirement",
             "formula_parser": "formula_parser",
             "followup": "followup",
+            "revise": "revise",
             "chitchat": "chitchat",
             "reject": "reject",
         },
@@ -82,6 +87,9 @@ def build_graph() -> StateGraph:
     workflow.add_edge("formula_parser", "substitution")
     workflow.add_edge("substitution", "regulatory")
 
+    # revise branch: revise → formula → engineer (复用已有上游产物)
+    workflow.add_edge("revise", "formula")
+
     workflow.add_edge("followup", END)
     workflow.add_edge("chitchat", END)
     workflow.add_edge("reject", END)
@@ -94,4 +102,7 @@ async def get_compiled_graph():
     checkpointer = AsyncSqliteSaver(conn)
     await checkpointer.setup()
     workflow = build_graph()
-    return workflow.compile(checkpointer=checkpointer)
+    compiled = workflow.compile(checkpointer=checkpointer)
+    # 显式挂一个引用，便于其它模块通过 graph.checkpointer 访问
+    compiled.checkpointer = checkpointer
+    return compiled

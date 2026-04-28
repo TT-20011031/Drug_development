@@ -1,23 +1,39 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Download } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
   isLoading: boolean;
-  pdfUrl: string | null;
+  prefill?: { text: string; token: number } | null;
 }
 
-export function ChatInput({ onSend, isLoading, pdfUrl }: ChatInputProps) {
+export function ChatInput({ onSend, isLoading, prefill }: ChatInputProps) {
   const [input, setInput] = useState("");
+  const [focused, setFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastPrefillToken = useRef<number>(-1);
+
+  useEffect(() => {
+    if (prefill && prefill.token !== lastPrefillToken.current) {
+      lastPrefillToken.current = prefill.token;
+      setInput(prefill.text);
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        textareaRef.current?.setSelectionRange(
+          prefill.text.length,
+          prefill.text.length
+        );
+      }, 0);
+    }
+  }, [prefill]);
 
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height =
-        Math.min(textareaRef.current.scrollHeight, 100) + "px";
+        Math.min(textareaRef.current.scrollHeight, 120) + "px";
     }
   }, [input]);
 
@@ -36,70 +52,86 @@ export function ChatInput({ onSend, isLoading, pdfUrl }: ChatInputProps) {
   };
 
   return (
-    <div className="absolute bottom-4 left-0 right-0 z-10 flex justify-center px-4">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg border border-gray-200 px-4 py-3">
-        {isLoading && (
-          <div className="flex items-center gap-1.5 mb-2 px-1">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-            <span className="text-xs text-gray-400 ml-1">AI 正在处理中…</span>
-          </div>
-        )}
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isLoading ? "AI 处理中，完成后可继续输入…" : "输入产品研发需求或问题，按 Enter 发送…"}
-            disabled={isLoading}
-            rows={1}
-            className="flex-1 resize-none bg-transparent text-sm leading-relaxed
-              focus:outline-none
-              disabled:text-gray-400
-              placeholder:text-gray-400"
-          />
-
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            {pdfUrl && (
-              <a
-                href={pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg flex items-center justify-center
-                  text-green-600 hover:bg-green-50 transition-colors"
-                title="下载 PDF 报告"
-              >
-                <Download className="w-4 h-4" />
-              </a>
-            )}
+    <div className="absolute bottom-5 left-0 right-0 z-10 flex justify-center px-4 pointer-events-none">
+      <div
+        className={`w-full max-w-3xl bg-paper-light rounded-2xl pointer-events-auto transition-all duration-200 relative ${
+          focused
+            ? "border border-ochre/55 shadow-bubble-ink"
+            : "border border-ink/12 shadow-bubble"
+        }`}
+      >
+        <div className="px-5 pt-3.5 pb-3.5">
+          {isLoading && (
+            <div className="flex items-center gap-2 mb-2.5 pb-2 border-b border-ink/8">
+              <span className="inline-flex items-center gap-1">
+                <span
+                  className="w-1.5 h-1.5 bg-cinnabar rounded-full animate-ink-drip"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <span
+                  className="w-1.5 h-1.5 bg-cinnabar rounded-full animate-ink-drip"
+                  style={{ animationDelay: "180ms" }}
+                />
+                <span
+                  className="w-1.5 h-1.5 bg-cinnabar rounded-full animate-ink-drip"
+                  style={{ animationDelay: "360ms" }}
+                />
+              </span>
+              <span className="font-serif text-[12px] text-cinnabar tracking-[0.18em]">
+                生成中
+              </span>
+            </div>
+          )}
+          <div className="flex items-end gap-3">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              placeholder={
+                isLoading
+                  ? "请稍候，生成完成后可继续追问……"
+                  : "继续撰写需求或追问问题……"
+              }
+              disabled={isLoading}
+              rows={1}
+              className="flex-1 resize-none bg-transparent text-[14.5px] leading-[1.75] font-sans pt-1.5 pb-1
+                focus:outline-none
+                disabled:text-ink-faint
+                placeholder:text-ink-faint placeholder:italic placeholder:font-serif"
+            />
 
             <button
               onClick={handleSubmit}
               disabled={!input.trim() || isLoading}
-              className="w-8 h-8 rounded-lg flex items-center justify-center
-                bg-green-600 text-white
-                hover:bg-green-700 transition-colors
-                disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-ochre/55 text-ochre-dark border border-ochre/70 hover:bg-ochre/70 hover:border-ochre/85 shadow-bubble transition-all disabled:bg-paper-dark disabled:text-ink-faint disabled:border-ink/15 disabled:shadow-none disabled:cursor-not-allowed flex-shrink-0 group relative"
+              aria-label="发送"
             >
               {isLoading ? (
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                   <circle
-                    className="opacity-25"
-                    cx="12" cy="12" r="10"
-                    stroke="currentColor" strokeWidth="4" fill="none"
+                    className="opacity-30"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
                   />
                   <path
-                    className="opacity-75"
+                    className="opacity-90"
                     fill="currentColor"
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                   />
                 </svg>
               ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                </svg>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              )}
+              {/* Cinnabar accent dot when there's content to send */}
+              {!isLoading && input.trim() && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-cinnabar rounded-full animate-ink-pulse" />
               )}
             </button>
           </div>

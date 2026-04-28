@@ -12,27 +12,37 @@ ROUTER_SYSTEM_PROMPT = """你是一个产品研发意图分类器。根据用户
    - 咨询生产工艺、提取工艺、含量设计、成本估算
    - 从目标人群或症状出发规划产品方案
 
-2. followup — 用户在对之前已生成的方案进行追问或补充修改。例如：
-   - "把灵芝去掉换成黄芪"
-   - "成本能不能降到XX以下"
-   - "再加一个补肾的方向"
+2. revise — 【已有报告】场景下，用户希望"修改报告里某个具体内容"，需要重新生成配方/产品规格。典型例子：
+   - "把配方里的茯苓去掉" / "用黄精替换灵芝"
+   - "再加一味枸杞" / "君药改成丹参"
+   - "用量改为每次 5g" / "把含量指标提到 30%"
+   - "成本压到 50 元/kg 以下" / "工艺改为一次提取"
+   - "口服液改成片剂"
+   关键特征：①上下文中已有产品方案；②用户在下达"修改/替换/调整/增删"等命令式动作。
 
-3. chitchat — 用户在进行日常闲聊、问候、自我介绍类互动，或询问你是谁、你能做什么等。例如：
+3. followup — 【已有报告】场景下，用户只是对报告内容进行解释、追问、说明，不要求修改。例如：
+   - "详细说说君臣佐使" / "为什么选这味药"
+   - "这个工艺能不能批量化" / "适宜人群里加几个例子说明"
+   - "提取得率怎么算的"
+   关键特征：用户在"问"，不是在"改"。
+
+4. chitchat — 用户在进行日常闲聊、问候、自我介绍类互动，或询问你是谁、你能做什么等。例如：
    - "你好" / "在吗" / "帮我介绍一下你自己"
    - "你是什么AI" / "你有什么功能"
    - "今天天气真好"
 
-4. optimize — 用户提供了一个已有的古方/配方，希望对其进行优化或替代。包括但不限于：
+5. optimize — 用户提供了一个已有的古方/配方，希望对其进行优化或替代。包括但不限于：
    - 替换不可得/禁用/稀缺的药材
    - 对已有方剂进行现代化改良
    - “这个方子里的XX能不能换成YY”
    - “我有个古方，但好多药材都没有了”
    关键特征：用户明确提到了具体的方剂名称或药材组成，并希望修改/替换/优化。
+   注意：optimize 是用户首次提供古方进入优化分支；revise 是已有【本系统生成的报告】之后再修改。两者优先级 revise > optimize（若上下文已有报告并且是修改命令，归为 revise）。
 
-5. reject — 用户的问题与产品研发无关且非闲聊（如编程、数学、政治等），或完全无法判断。
+6. reject — 用户的问题与产品研发无关且非闲聊（如编程、数学、政治等），或完全无法判断。
 
 【输出要求】
-只输出一个单词：research 或 followup 或 chitchat 或 optimize 或 reject
+只输出一个单词：research 或 revise 或 followup 或 chitchat 或 optimize 或 reject
 不要输出任何其他内容。"""
 
 
@@ -52,7 +62,7 @@ async def router_agent(state: ProductDevState, config: RunnableConfig) -> dict:
     response = await llm.ainvoke(messages, config=config)
     intent = response.content.strip().lower()
 
-    if intent not in ("research", "followup", "optimize", "chitchat", "reject"):
+    if intent not in ("research", "revise", "followup", "optimize", "chitchat", "reject"):
         intent = "research"
 
     return {"intent": intent, "current_step": "router"}

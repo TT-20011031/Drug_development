@@ -19,7 +19,7 @@ FOLLOWUP_SYSTEM_PROMPT = """你是寿仙谷的智能产品研发助手。用户�
 
 async def followup_agent(state: ProductDevState, config: RunnableConfig) -> dict:
     llm = get_llm(temperature=0.3, streaming=False)
-
+ 
     original = state.get("original_report", "") or state.get("final_markdown", "")
     user_question = state["user_input"]
 
@@ -49,6 +49,6 @@ async def followup_agent(state: ProductDevState, config: RunnableConfig) -> dict
     response = await llm.ainvoke(messages, config=config)
 
     return {
-        "final_markdown": response.content,
+        "followup_reply": response.content,
         "current_step": "followup",
     }

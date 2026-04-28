@@ -20,6 +20,12 @@ ENGINEER_SYSTEM_PROMPT = """你是一名中医药产品研发工程师，负责�
 ### 适宜人群
 不超过 3 行，与主治直接相关。
 
+### 原料适配度说明
+1～2 行：列出本配方包含的"用户指定原料"（来自上游【指定/必须包含原料】），并直白说明它们与本品主功效的关系。
+- 若适配度高：简述协同作用，例如"灵芝补气安神 → 与本品助眠功效高度契合"
+- 若适配度中/低：明确说明"X 的核心功效为 A，与本品 B 功效非直接对应，本品 B 功效主要由 Y、Z 等承担，X 在本方中起 C 作用（如扶正培本、辅助提升整体状态等）"
+- 若上游标注无指定原料：本节写"本品无用户指定主原料约束，配方设计完全基于功能与古方思路"
+
 ### 配伍分析
 按君药 → 臣药 → 佐药 → 使药解释本配方结构。最后 1 行总结适应证候。
 
@@ -113,4 +119,5 @@ async def engineer_agent(state: ProductDevState, config: RunnableConfig) -> dict
         "final_markdown": full_markdown,
         "original_report": full_markdown,
         "current_step": "product_spec",
+        "revision_instruction": "",
     }

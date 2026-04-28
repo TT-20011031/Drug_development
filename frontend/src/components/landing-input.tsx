@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FlaskConical, Shield, Leaf, Sparkles, BookOpen, Microscope, Scale, Settings } from "lucide-react";
+import {
+  FlaskConical,
+  Shield,
+  Leaf,
+  Sparkles,
+  BookOpen,
+  Microscope,
+  Scale,
+  Settings,
+} from "lucide-react";
 
 interface LandingInputProps {
   onSend: (message: string) => void;
@@ -15,11 +24,15 @@ const SUGGESTIONS = [
   { Icon: Leaf, text: "开发改善睡眠的草本功能食品" },
 ];
 
-const FEATURES = [
-  { Icon: BookOpen, title: "古方检索", desc: "智能匹配经典古方" },
-  { Icon: Microscope, title: "配方设计", desc: "现代化配伍方案" },
-  { Icon: Scale, title: "法规审查", desc: "合规性自动校验" },
-  { Icon: Settings, title: "工程规格", desc: "生产工艺与成本" },
+const FEATURES: {
+  serial: string;
+  Icon: typeof BookOpen;
+  title: string;
+}[] = [
+  { serial: "01", Icon: BookOpen, title: "古方检索" },
+  { serial: "02", Icon: Microscope, title: "配方设计" },
+  { serial: "03", Icon: Scale, title: "法规审查" },
+  { serial: "04", Icon: Settings, title: "工程规格" },
 ];
 
 export function LandingInput({ onSend, isLoading }: LandingInputProps) {
@@ -30,7 +43,8 @@ export function LandingInput({ onSend, isLoading }: LandingInputProps) {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 160) + "px";
+      textareaRef.current.style.height =
+        Math.min(textareaRef.current.scrollHeight, 180) + "px";
     }
   }, [input]);
 
@@ -50,28 +64,39 @@ export function LandingInput({ onSend, isLoading }: LandingInputProps) {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center w-full relative overflow-hidden">
-      {/* Subtle radial background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-green-50/40 via-white to-gray-50 pointer-events-none" />
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-100/20 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative z-10 flex flex-col items-center w-full max-w-2xl px-6">
-        {/* Logo */}
-        <div className="mb-6 flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center shadow-lg shadow-green-200/50 mb-4">
-            <span className="text-white text-xl font-bold">寿</span>
+      {/* Decorative seal — right edge */}
+      <div className="hidden lg:block absolute right-12 bottom-10 select-none pointer-events-none animate-fade-up">
+        <div className="seal-ring w-14 h-14 bg-cinnabar/85 rounded-sm flex items-center justify-center rotate-3">
+          <div className="font-serif text-bone text-[20px] leading-none tracking-tight">
+            本草
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">智能产品研发助手</h1>
-          <p className="text-sm text-gray-400 mt-1.5">寿仙谷 · AI 驱动的中医药产品全流程研发</p>
+        </div>
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center w-full max-w-3xl px-6 animate-ink-bleed">
+        {/* Micro tagline (标题已上 header，仅留副标题作为输入框上方装饰五联) */}
+        <div className="mb-7 flex items-center gap-4 text-ink-faint">
+          <div className="ornament-rule-soft w-16" />
+          <p className="font-serif text-[13px] text-ink-mute tracking-[0.32em]">
+            古方 · 解析 · 配伍 · 审核 · 规格
+          </p>
+          <div className="ornament-rule-soft w-16" />
         </div>
 
-        {/* Input Card */}
+        {/* Input — manuscript card with corner ticks (preserved as identity) */}
         <div
-          className={`w-full bg-white rounded-2xl border transition-all duration-300 ${
+          className={`w-full bg-paper-honey/40 rounded-2xl border transition-all duration-300 relative ${
             focused
-              ? "shadow-xl shadow-green-100/50 border-green-200"
-              : "shadow-lg shadow-gray-100/80 border-gray-150"
+              ? "border-ochre/60 shadow-bubble-ink"
+              : "border-ink/15 shadow-bubble"
           }`}
         >
+          {/* Decorative corner ticks */}
+          <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-ink/25 rounded-tl-2xl" />
+          <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-ink/25 rounded-tr-2xl" />
+          <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-ink/25 rounded-bl-2xl" />
+          <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-ink/25 rounded-br-2xl" />
+
           <textarea
             ref={textareaRef}
             value={input}
@@ -79,54 +104,84 @@ export function LandingInput({ onSend, isLoading }: LandingInputProps) {
             onKeyDown={handleKeyDown}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            placeholder="描述您的产品研发需求…"
+            placeholder="试写一笔产品研发需求……"
             disabled={isLoading}
             rows={3}
-            className="w-full resize-none bg-transparent text-[15px] leading-relaxed px-5 pt-5 pb-2 focus:outline-none disabled:text-gray-400 placeholder:text-gray-300"
+            className="w-full resize-none bg-transparent text-[16px] leading-[1.85] font-serif px-7 pt-7 pb-2 focus:outline-none disabled:text-ink-faint placeholder:text-ink-faint placeholder:italic placeholder:font-sans"
           />
-          <div className="flex items-center justify-between px-5 pb-4 pt-1">
-            <span className="text-xs text-gray-300 select-none">Shift+Enter 换行</span>
+          <div className="flex items-center justify-end px-5 pb-4 pt-2">
             <button
               onClick={handleSubmit}
               disabled={!input.trim() || isLoading}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-green-600 to-green-500 text-white text-sm font-medium hover:from-green-700 hover:to-green-600 transition-all disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed shadow-sm hover:shadow-md disabled:shadow-none"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-ochre/38 text-ochre-dark border border-ochre/55 text-[14px] font-serif tracking-[0.18em] hover:bg-ochre/48 hover:border-ochre/68 shadow-bubble transition-all disabled:bg-paper-dark disabled:text-ink-faint disabled:border-ink/15 disabled:shadow-none disabled:cursor-not-allowed"
             >
-              {isLoading ? (
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+              {isLoading && (
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-30"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-90"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
               )}
-              开始研发
+              <span>开始研发</span>
             </button>
           </div>
         </div>
 
-        {/* Suggestion chips */}
-        <div className="flex flex-wrap gap-2 mt-5 justify-center">
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s.text}
-              onClick={() => onSend(s.text)}
-              disabled={isLoading}
-              className="group flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-full bg-white border border-gray-100 text-gray-500 hover:border-green-200 hover:text-green-700 hover:bg-green-50/50 hover:shadow-sm transition-all disabled:opacity-50"
-            >
-              <s.Icon className="w-3.5 h-3.5 text-gray-400 group-hover:text-green-600 transition-colors" />
-              {s.text}
-            </button>
-          ))}
+        {/* Suggestion strip */}
+        <div className="mt-8 w-full">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="font-serif text-[15px] text-ink-soft tracking-[0.18em]">
+              范 例
+            </span>
+            <div className="flex-1 ornament-rule-soft text-ink-faint" />
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            {SUGGESTIONS.map((s, idx) => (
+              <button
+                key={s.text}
+                onClick={() => onSend(s.text)}
+                disabled={isLoading}
+                style={{ animationDelay: `${idx * 70}ms` }}
+                className="group flex items-center gap-2 text-[13.5px] px-4 py-2 rounded-full bg-ochre/24 border border-ochre/38 text-ink-soft hover:bg-ochre/32 hover:border-ochre/48 hover:text-ink hover:shadow-bubble transition-all disabled:opacity-50 animate-fade-up"
+              >
+                <s.Icon className="w-3.5 h-3.5 text-ochre/80 group-hover:text-ochre-dark transition-colors" />
+                <span className="font-sans">{s.text}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Feature pills */}
-        <div className="grid grid-cols-4 gap-3 mt-10 w-full">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="flex flex-col items-center text-center py-3 px-2 rounded-xl bg-white/60 border border-gray-50">
-              <f.Icon className="w-5 h-5 text-green-600 mb-1.5" />
-              <span className="text-xs font-semibold text-gray-700">{f.title}</span>
-              <span className="text-[11px] text-gray-400 mt-0.5">{f.desc}</span>
+        {/* Feature strip — compact premium horizontal bar */}
+        <div className="mt-10 flex w-full items-stretch overflow-hidden rounded-xl bg-qing-deep shadow-bubble-ink animate-fade-up">
+          {FEATURES.map((f, idx) => (
+            <div
+              key={f.title}
+              className={`flex flex-1 items-center justify-center gap-2.5 px-4 py-3 transition-colors hover:bg-bone/[0.06] ${
+                idx > 0 ? "border-l border-bone/[0.10]" : ""
+              }`}
+            >
+              <span className="text-[11px] font-mono tracking-widest text-qing-mist/70">
+                {f.serial}
+              </span>
+              <f.Icon className="h-3.5 w-3.5 text-qing-mist" strokeWidth={1.5} />
+              <span className="font-serif text-[14px] tracking-wide text-bone">
+                {f.title}
+              </span>
             </div>
           ))}
         </div>
       </div>
     </div>
   );
-}
+ }

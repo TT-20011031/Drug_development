@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 def get_llm(temperature: float = 0.7, streaming: bool = True) -> ChatOpenAI:

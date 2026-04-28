@@ -9,6 +9,7 @@ from .engineer import engineer_agent
 from .formula_parser import formula_parser_agent
 from .substitution import substitution_agent
 from .followup import followup_agent
+from .revise import revise_agent
 
 __all__ = [
     "router_agent",
@@ -22,4 +23,5 @@ __all__ = [
     "formula_parser_agent",
     "substitution_agent",
     "followup_agent",
+    "revise_agent",
 ]

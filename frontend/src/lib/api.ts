@@ -1,18 +1,61 @@
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
+export interface StreamChatOptions {
+  signal?: AbortSignal;
+  resetPending?: boolean;
+  onAbort?: () => void;
+}
+
 export async function streamChat(
   message: string,
   sessionId: string,
   onEvent: (event: string, data: any) => void,
   onError: (error: Error) => void,
-  onComplete: () => void
+  onComplete: () => void,
+  options: StreamChatOptions = {}
+) {
+  return _streamPost(
+    "/api/chat",
+    { message, session_id: sessionId, reset_pending: options.resetPending === true },
+    onEvent,
+    onError,
+    onComplete,
+    options
+  );
+}
+
+export async function streamResume(
+  sessionId: string,
+  onEvent: (event: string, data: any) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void,
+  options: StreamChatOptions = {}
+) {
+  return _streamPost(
+    "/api/chat/resume",
+    { session_id: sessionId },
+    onEvent,
+    onError,
+    onComplete,
+    options
+  );
+}
+
+async function _streamPost(
+  url: string,
+  body: Record<string, unknown>,
+  onEvent: (event: string, data: any) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void,
+  options: StreamChatOptions
 ) {
   try {
-    console.log("[SSE] Sending request via Next.js proxy /api/chat");
-    const response = await fetch("/api/chat", {
+    console.log(`[SSE] Sending request to ${url}`);
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, session_id: sessionId }),
+      body: JSON.stringify(body),
+      signal: options.signal,
     });
 
     console.log("[SSE] Response status:", response.status);
@@ -75,8 +118,14 @@ export async function streamChat(
     console.log("[SSE] Stream complete");
     onComplete();
   } catch (error) {
-    console.error("[SSE] Error:", error);
-    onError(error as Error);
+    const err = error as Error;
+    if (err.name === "AbortError") {
+      console.log("[SSE] Aborted by client");
+      options.onAbort?.();
+      return;
+    }
+    console.error("[SSE] Error:", err);
+    onError(err);
   }
 }
 
@@ -96,6 +145,7 @@ export interface Conversation {
 export interface ConversationDetail extends Conversation {
   steps: { id: string; label: string; content: string; status: string }[];
   final_markdown?: string;
+  user_input?: string;
 }
 
 export async function fetchConversations(): Promise<Conversation[]> {
