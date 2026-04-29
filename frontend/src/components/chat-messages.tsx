@@ -2,11 +2,11 @@
 
 
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import ReactMarkdown from "react-markdown";
 
-import { FileText, Feather, Leaf } from "lucide-react";
+import { FileText, Feather, Leaf, ChevronDown } from "lucide-react";
 
 import { PipelineStep } from "@/lib/types";
 
@@ -88,13 +88,91 @@ export function ChatMessages({
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  const stuckToBottomRef = useRef(true);
+
+  const autoScrollingRef = useRef(false);
+
+  const [showJumpButton, setShowJumpButton] = useState(false);
+
+
+
+  const handleScroll = () => {
+
+    if (autoScrollingRef.current) return;
+
+    const el = containerRef.current;
+
+    if (!el) return;
+
+    const nearBottom =
+
+      el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+
+    stuckToBottomRef.current = nearBottom;
+
+    setShowJumpButton(!nearBottom);
+
+  };
+
+
+
+  const scrollToBottom = (smooth: boolean) => {
+
+    autoScrollingRef.current = true;
+
+    bottomRef.current?.scrollIntoView({
+
+      behavior: smooth ? "smooth" : "auto",
+
+    });
+
+    window.setTimeout(
+
+      () => {
+
+        autoScrollingRef.current = false;
+
+      },
+
+      smooth ? 500 : 50
+
+    );
+
+  };
+
+
+
+  const jumpToLatest = () => {
+
+    stuckToBottomRef.current = true;
+
+    setShowJumpButton(false);
+
+    scrollToBottom(true);
+
+  };
+
+
+
+  // 新消息 / 暂停态变化：smooth 滚动
 
   useEffect(() => {
 
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (stuckToBottomRef.current) scrollToBottom(true);
 
-  }, [messages, liveProgress, paused]);
+  }, [messages.length, paused]);
+
+
+
+  // 流式 token 更新：即时滚动以避免 smooth 动画与高频更新打架
+
+  useEffect(() => {
+
+    if (stuckToBottomRef.current) scrollToBottom(false);
+
+  }, [liveProgress]);
 
 
 
@@ -104,7 +182,17 @@ export function ChatMessages({
 
   return (
 
-    <div className="flex-1 overflow-y-auto px-6 py-8 pb-32 space-y-7 max-w-[920px] w-full mx-auto">
+    <div className="relative flex-1 flex flex-col min-h-0">
+
+    <div
+
+      ref={containerRef}
+
+      onScroll={handleScroll}
+
+      className="flex-1 overflow-y-auto px-6 py-8 pb-32 space-y-7 max-w-[920px] w-full mx-auto"
+
+    >
 
       {messages.map((msg, i) => (
 
@@ -277,6 +365,28 @@ export function ChatMessages({
 
 
       <div ref={bottomRef} />
+
+    </div>
+
+    {showJumpButton && (
+
+      <button
+
+        onClick={jumpToLatest}
+
+        className="absolute right-6 bottom-28 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-paper-light/90 border border-ochre/40 text-[12px] font-serif text-ink-soft hover:text-ink hover:border-ochre/60 shadow-bubble-ink backdrop-blur-sm transition-all animate-fade-up tracking-[0.18em]"
+
+        aria-label="跳到最新"
+
+      >
+
+        <ChevronDown className="w-3.5 h-3.5 text-cinnabar" strokeWidth={2} />
+
+        <span>跳 到 最 新</span>
+
+      </button>
+
+    )}
 
     </div>
 

@@ -2,27 +2,21 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-  FlaskConical,
-  Shield,
-  Leaf,
-  Sparkles,
   BookOpen,
   Microscope,
   Scale,
   Settings,
+  Library,
+  ArrowRight,
 } from "lucide-react";
+import { getFeaturedScenarios } from "@/lib/scenarios";
+import { ScenarioCard } from "./scenario-card";
+import { ScenariosModal } from "./scenarios-modal";
 
 interface LandingInputProps {
   onSend: (message: string) => void;
   isLoading: boolean;
 }
-
-const SUGGESTIONS = [
-  { Icon: FlaskConical, text: "开发一款清热解毒的含片产品" },
-  { Icon: Shield, text: "设计针对中老年人的免疫调节保健品" },
-  { Icon: Sparkles, text: "研发灵芝孢子粉+西洋参配方产品" },
-  { Icon: Leaf, text: "开发改善睡眠的草本功能食品" },
-];
 
 const FEATURES: {
   serial: string;
@@ -38,7 +32,22 @@ const FEATURES: {
 export function LandingInput({ onSend, isLoading }: LandingInputProps) {
   const [input, setInput] = useState("");
   const [focused, setFocused] = useState(false);
+  const [expandedScenarioId, setExpandedScenarioId] = useState<string | null>(
+    null
+  );
+  const [modalOpen, setModalOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const featuredScenarios = getFeaturedScenarios();
+
+  const handleScenarioToggle = (id: string) => {
+    setExpandedScenarioId((prev) => (prev === id ? null : id));
+  };
+
+  const handleScenarioStart = (prompt: string) => {
+    if (isLoading) return;
+    setExpandedScenarioId(null);
+    onSend(prompt);
+  };
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -63,7 +72,7 @@ export function LandingInput({ onSend, isLoading }: LandingInputProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center w-full relative overflow-hidden">
+    <div className="flex-1 w-full overflow-y-auto relative">
       {/* Decorative seal — right edge */}
       <div className="hidden lg:block absolute right-12 bottom-10 select-none pointer-events-none animate-fade-up">
         <div className="seal-ring w-14 h-14 bg-cinnabar/85 rounded-sm flex items-center justify-center rotate-3">
@@ -73,7 +82,8 @@ export function LandingInput({ onSend, isLoading }: LandingInputProps) {
         </div>
       </div>
 
-      <div className="relative z-10 flex flex-col items-center w-full max-w-3xl px-6 animate-ink-bleed">
+      <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 relative">
+      <div className="relative z-10 flex flex-col items-center w-full max-w-3xl animate-ink-bleed">
         {/* Micro tagline (标题已上 header，仅留副标题作为输入框上方装饰五联) */}
         <div className="mb-7 flex items-center gap-4 text-ink-faint">
           <div className="ornament-rule-soft w-16" />
@@ -138,26 +148,43 @@ export function LandingInput({ onSend, isLoading }: LandingInputProps) {
           </div>
         </div>
 
-        {/* Suggestion strip */}
+        {/* Featured scenario library */}
         <div className="mt-8 w-full">
           <div className="flex items-center gap-3 mb-4">
             <span className="font-serif text-[15px] text-ink-soft tracking-[0.18em]">
               范 例
             </span>
             <div className="flex-1 ornament-rule-soft text-ink-faint" />
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              disabled={isLoading}
+              className="group inline-flex items-center gap-1.5 text-[12.5px] font-serif tracking-[0.18em] text-ink-mute hover:text-cinnabar transition-colors disabled:opacity-50"
+            >
+              <Library className="w-3.5 h-3.5" strokeWidth={1.6} />
+              <span>更 多 范 例</span>
+              <ArrowRight
+                className="w-3 h-3 group-hover:translate-x-0.5 transition-transform"
+                strokeWidth={1.8}
+              />
+            </button>
           </div>
-          <div className="flex flex-wrap gap-2.5">
-            {SUGGESTIONS.map((s, idx) => (
-              <button
-                key={s.text}
-                onClick={() => onSend(s.text)}
-                disabled={isLoading}
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+            {featuredScenarios.map((s, idx) => (
+              <div
+                key={s.id}
                 style={{ animationDelay: `${idx * 70}ms` }}
-                className="group flex items-center gap-2 text-[13.5px] px-4 py-2 rounded-full bg-ochre/10 border border-ochre/25 text-ink-soft hover:bg-ochre/10 hover:border-ochre/30 hover:text-ink hover:shadow-bubble transition-all disabled:opacity-50 animate-fade-up"
+                className="animate-fade-up"
               >
-                <s.Icon className="w-3.5 h-3.5 text-ochre-dark/85 group-hover:text-ochre-dark transition-colors" />
-                <span className="font-sans">{s.text}</span>
-              </button>
+                <ScenarioCard
+                  scenario={s}
+                  expanded={expandedScenarioId === s.id}
+                  onToggle={handleScenarioToggle}
+                  onStart={handleScenarioStart}
+                  disabled={isLoading}
+                  variant="featured"
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -182,6 +209,14 @@ export function LandingInput({ onSend, isLoading }: LandingInputProps) {
           ))}
         </div>
       </div>
+      </div>
+
+      <ScenariosModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onStart={handleScenarioStart}
+        disabled={isLoading}
+      />
     </div>
   );
- }
+}

@@ -504,7 +504,7 @@ async def api_get_conversation(session_id: str):
             vals = state.values
             steps_data = []
             intent = vals.get("intent", "")
-            if intent in ("research", "followup"):
+            if intent in ("research", "followup", "revise"):
                 step_ids = ["router", "requirement", "ancient_formulas", "herb_analysis",
                             "regulatory_check", "new_formula", "product_spec"]
             elif intent == "optimize":

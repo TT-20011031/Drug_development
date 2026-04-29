@@ -103,8 +103,8 @@ export default function Home() {
           if (s.status === "running") return { ...s, status: "done" as const };
           return s;
         });
-        // 只有在用户未手动固定某个步骤时，才自动跟随当前运行步骤
-        if (!buf.pinnedStepId) buf.activeStepId = data.step;
+        // 只有在用户未手动固定某个步骤时，才自动跟随当前运行步骤；router 在报告 UI 中不展示，不抢占 activeStepId
+        if (!buf.pinnedStepId && data.step !== "router") buf.activeStepId = data.step;
         break;
       case "step_content":
         if (!isKnown(data.step)) break;
@@ -113,7 +113,7 @@ export default function Home() {
           if (s.status === "running") return { ...s, status: "done" as const };
           return s;
         });
-        if (!buf.pinnedStepId) buf.activeStepId = data.step;
+        if (!buf.pinnedStepId && data.step !== "router") buf.activeStepId = data.step;
         break;
       case "step_token":
         buf.steps = buf.steps.map((s) =>
@@ -121,7 +121,7 @@ export default function Home() {
             ? { ...s, status: "running" as const, content: (s.content || "") + data.token }
             : s
         );
-        if (!buf.pinnedStepId && data.step !== buf.activeStepId) buf.activeStepId = data.step;
+        if (!buf.pinnedStepId && data.step !== "router" && data.step !== buf.activeStepId) buf.activeStepId = data.step;
         break;
       case "step_done":
         buf.steps = buf.steps.map((s) =>
@@ -428,18 +428,22 @@ export default function Home() {
     }
     const hasDone = loadedSteps.some((s) => s.status === "done" && s.id !== "router");
 
-    setSteps(loadedSteps);
-    setActiveStepId(lastStep?.id || "");
-    setIsLoading(false);
-    setPdfUrl(pUrl);
-    setChatMessages([]);
-    setChatResponse("");
-    setErrorMsg("");
-    setSavedPipelineSteps(hasDone ? loadedSteps : null);
-    setSavedActiveStepId(lastStep?.id || "");
-    setUserInput(detail.user_input || "");
-    setPausedInfo(null);
-    setPinnedStepId(null);
+    const loadedBuf: SessionData = {
+      steps: loadedSteps,
+      activeStepId: lastStep?.id || "",
+      isLoading: false,
+      pdfUrl: pUrl,
+      chatMessages: [],
+      chatResponse: "",
+      savedPipelineSteps: hasDone ? loadedSteps : null,
+      savedActiveStepId: lastStep?.id || "",
+      errorMsg: "",
+      userInput: detail.user_input || "",
+      pinnedStepId: null,
+      paused: null,
+    };
+    sessionsRef.current.set(sid, loadedBuf);
+    syncToUI(loadedBuf);
   }, [syncToUI]);
 
   const handleNewConversation = useCallback(() => {
@@ -454,11 +458,13 @@ export default function Home() {
   const displaySteps = showSaved ? savedPipelineSteps! : steps;
   const displayActiveStepId = showSaved ? savedActiveStepId : activeStepId;
 
-  const activeStep = displaySteps.find((s) => s.id === displayActiveStepId) || null;
   const visibleSteps = displaySteps.filter(
-    (s) => s.status === "running" || s.status === "done" || s.status === "error"
+    (s) =>
+      s.id !== "router" &&
+      (s.status === "running" || s.status === "done" || s.status === "error")
   );
-  const hasPipelineSteps = visibleSteps.some((s) => s.id !== "router");
+  const activeStep = visibleSteps.find((s) => s.id === displayActiveStepId) || null;
+  const hasPipelineSteps = visibleSteps.length > 0;
   // “可进入报告视图”：存在已保存的完整报告或当前正在生成报告中
   const canViewReport = savedPipelineSteps !== null || hasPipelineSteps;
 
@@ -562,7 +568,13 @@ export default function Home() {
                   </button>
                 </div>
               )}
-              <ContentPanel activeStep={activeStep} allSteps={displaySteps} userInput={userInput} />
+              <ContentPanel
+                activeStep={activeStep}
+                allSteps={visibleSteps}
+                userInput={userInput}
+                isLoading={isLoading}
+                onSubmitRevision={handleSend}
+              />
             </div>
           </>
         ) : (

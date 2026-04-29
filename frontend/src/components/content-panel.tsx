@@ -1,14 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { PipelineStep } from "@/lib/types";
 import { MarkdownRender } from "./markdown-render";
 import { StepIcon } from "./step-icon";
-import { FileText, ClipboardList } from "lucide-react";
+import { FormulaEditor } from "./formula-editor";
+import { FileText, ClipboardList, ChevronDown } from "lucide-react";
 
 interface ContentPanelProps {
   activeStep: PipelineStep | null;
   allSteps: PipelineStep[];
   userInput?: string;
+  isLoading?: boolean;
+  onSubmitRevision?: (instruction: string) => void;
 }
 
 const STATUS_LABEL: Record<PipelineStep["status"], string> = {
@@ -22,6 +26,8 @@ export function ContentPanel({
   activeStep,
   allSteps,
   userInput,
+  isLoading = false,
+  onSubmitRevision,
 }: ContentPanelProps) {
   // Determine the chapter index this step belongs to among the active pipeline
   const stepIndex = activeStep
@@ -30,86 +36,106 @@ export function ContentPanel({
   const numerals = ["壹", "貳", "參", "肆", "伍", "陸", "柒", "捌", "玖", "拾"];
   const chapterNumeral = stepIndex >= 0 ? numerals[stepIndex] ?? `${stepIndex + 1}` : "—";
 
+  // 议题块默认折叠为 1 行，点击展开；切换步骤 / 会话（userInput 变化）时自动回折叠
+  const [issueExpanded, setIssueExpanded] = useState(false);
+  useEffect(() => {
+    setIssueExpanded(false);
+  }, [userInput]);
+
   return (
     <div className="h-full flex flex-col bg-paper-light/30">
-      {/* Header */}
-      <div className="px-8 pt-6 pb-5 border-b border-ink/10 relative">
+      {/* Header — single compact row */}
+      <div className="px-8 pt-4 pb-4 border-b border-ink/10 relative">
         {activeStep ? (
-          <>
-            {/* Top row: chapter numeral + group label */}
-            <div className="flex items-baseline gap-4 mb-2">
-              <span className="font-serif text-[40px] text-cinnabar leading-none">
-                {chapterNumeral}
-              </span>
-              <span className="font-serif text-[14px] text-cinnabar-dark tracking-[0.18em]">
-                {activeStep.group}
-              </span>
-            </div>
-            {/* Title row: icon + step name + status capsules */}
-            <div className="flex items-center gap-3 mt-3">
-              <StepIcon
-                name={activeStep.icon}
-                className="w-6 h-6 text-ink-soft flex-shrink-0"
-              />
-              <h2 className="font-serif text-[26px] font-semibold text-ink tracking-[0.04em] flex-1 truncate">
-                {activeStep.label}
-              </h2>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {activeStep.duration !== undefined && (
-                  <span className="font-mono text-[12px] text-qing-deep border border-qing-mist bg-qing-pale/60 px-3 py-0.5 rounded-full tracking-tight">
-                    {activeStep.duration}s
+          <div className="flex items-center gap-3">
+            <span className="font-serif text-[22px] text-cinnabar leading-none flex-shrink-0">
+              {chapterNumeral}
+            </span>
+            <span className="w-px h-5 bg-ink/15 flex-shrink-0" aria-hidden />
+            <StepIcon
+              name={activeStep.icon}
+              className="w-5 h-5 text-ink-soft flex-shrink-0"
+            />
+            <h2 className="font-serif text-[22px] font-semibold text-ink tracking-[0.04em] flex-1 truncate">
+              {activeStep.label}
+            </h2>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {activeStep.duration !== undefined && (
+                <span className="font-mono text-[12px] text-qing-deep border border-qing-mist bg-qing-pale/60 px-3 py-0.5 rounded-full tracking-tight">
+                  {activeStep.duration}s
+                </span>
+              )}
+              <span
+                className={`text-[12px] px-3 py-0.5 rounded-full tracking-wide font-serif inline-flex items-center gap-1.5 ${
+                  activeStep.status === "done"
+                    ? "bg-moss/15 text-moss border border-moss/30"
+                    : activeStep.status === "running"
+                    ? "bg-cinnabar/10 text-cinnabar border border-cinnabar/30"
+                    : activeStep.status === "error"
+                    ? "bg-cinnabar/15 text-cinnabar-dark border border-cinnabar/40"
+                    : "bg-qing-pale text-qing-deep border border-qing-mist"
+                }`}
+              >
+                {STATUS_LABEL[activeStep.status]}
+                {activeStep.status === "running" && (
+                  <span className="inline-flex gap-0.5">
+                    <span className="w-1 h-1 bg-cinnabar rounded-full animate-ink-drip" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1 h-1 bg-cinnabar rounded-full animate-ink-drip" style={{ animationDelay: "180ms" }} />
                   </span>
                 )}
-                <span
-                  className={`text-[12px] px-3 py-0.5 rounded-full tracking-wide font-serif inline-flex items-center gap-1.5 ${
-                    activeStep.status === "done"
-                      ? "bg-moss/15 text-moss border border-moss/30"
-                      : activeStep.status === "running"
-                      ? "bg-cinnabar/10 text-cinnabar border border-cinnabar/30"
-                      : activeStep.status === "error"
-                      ? "bg-cinnabar/15 text-cinnabar-dark border border-cinnabar/40"
-                      : "bg-qing-pale text-qing-deep border border-qing-mist"
-                  }`}
-                >
-                  {STATUS_LABEL[activeStep.status]}
-                  {activeStep.status === "running" && (
-                    <span className="inline-flex gap-0.5">
-                      <span className="w-1 h-1 bg-cinnabar rounded-full animate-ink-drip" style={{ animationDelay: "0ms" }} />
-                      <span className="w-1 h-1 bg-cinnabar rounded-full animate-ink-drip" style={{ animationDelay: "180ms" }} />
-                    </span>
-                  )}
-                </span>
-              </div>
+              </span>
             </div>
-          </>
+          </div>
         ) : (
           <h2 className="font-serif text-[20px] text-ink-faint">详细内容</h2>
         )}
       </div>
 
-      {/* User-input quote */}
+      {/* User-input quote — collapsible (1-line by default, click to expand) */}
       {userInput && (
-        <div className="mx-8 mt-6 relative flex-shrink-0 animate-fade-up">
-          <div className="absolute -top-3 left-4 bg-paper px-3 font-serif text-[14px] text-ochre-dark tracking-[0.18em]">
+        <div className="mx-8 mt-4 relative flex-shrink-0 animate-fade-up">
+          <div className="absolute -top-3 left-4 bg-paper px-3 font-serif text-[14px] text-ochre-dark tracking-[0.18em] z-10 pointer-events-none">
             议 题
           </div>
-          <div className="border-l-[3px] border-ochre bg-paper-honey/40 pl-5 pr-5 py-4 rounded-r-xl">
+          <button
+            type="button"
+            onClick={() => setIssueExpanded((v) => !v)}
+            aria-expanded={issueExpanded}
+            className="w-full text-left border-l-[3px] border-ochre bg-paper-honey/40 hover:bg-paper-honey/60 pl-5 pr-10 py-2.5 rounded-r-xl relative transition-colors"
+          >
             <p
-              className="font-serif text-[15px] text-ink-soft leading-[1.9] line-clamp-3"
-              title={userInput}
+              className={
+                issueExpanded
+                  ? "font-serif text-[15px] text-ink-soft leading-[1.9] max-h-[40vh] overflow-y-auto whitespace-pre-wrap"
+                  : "font-serif text-[15px] text-ink-soft leading-[1.6] truncate"
+              }
+              title={issueExpanded ? undefined : userInput}
             >
               {userInput}
             </p>
-          </div>
+            <ChevronDown
+              className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cinnabar transition-transform ${
+                issueExpanded ? "rotate-180" : ""
+              }`}
+              strokeWidth={2}
+            />
+          </button>
         </div>
       )}
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-8 py-7 pb-12">
+      <div className="flex-1 overflow-y-auto px-8 py-5 pb-12">
         <div className="max-w-[760px] mx-auto">
           {activeStep ? (
             activeStep.content.trim() ? (
               <div className="animate-ink-bleed">
+                {activeStep.id === "product_spec" && onSubmitRevision && (
+                  <FormulaEditor
+                    rawMarkdown={activeStep.content}
+                    isLoading={isLoading}
+                    onSubmitRevision={onSubmitRevision}
+                  />
+                )}
                 <MarkdownRender content={activeStep.content} />
                 {/* Closing ornament */}
                 <div className="mt-12 flex items-center justify-center gap-3 text-ink-faint">
