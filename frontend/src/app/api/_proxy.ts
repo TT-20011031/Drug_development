@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:9603";
+const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:9603";
 
 export async function proxySseToBackend(
   request: NextRequest,

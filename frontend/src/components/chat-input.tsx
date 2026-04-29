@@ -106,7 +106,7 @@ export function ChatInput({ onSend, isLoading, prefill }: ChatInputProps) {
             <button
               onClick={handleSubmit}
               disabled={!input.trim() || isLoading}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-ochre/55 text-ochre-dark border border-ochre/70 hover:bg-ochre/70 hover:border-ochre/85 shadow-bubble transition-all disabled:bg-paper-dark disabled:text-ink-faint disabled:border-ink/15 disabled:shadow-none disabled:cursor-not-allowed flex-shrink-0 group relative"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-ochre/32 text-ochre-dark border border-ochre/50 hover:bg-ochre/48 hover:border-ochre/65 shadow-bubble transition-all disabled:bg-paper-dark disabled:text-ink-faint disabled:border-ink/15 disabled:shadow-none disabled:cursor-not-allowed flex-shrink-0 group relative"
               aria-label="发送"
             >
               {isLoading ? (

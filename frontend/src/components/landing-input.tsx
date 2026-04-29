@@ -153,9 +153,9 @@ export function LandingInput({ onSend, isLoading }: LandingInputProps) {
                 onClick={() => onSend(s.text)}
                 disabled={isLoading}
                 style={{ animationDelay: `${idx * 70}ms` }}
-                className="group flex items-center gap-2 text-[13.5px] px-4 py-2 rounded-full bg-ochre/24 border border-ochre/38 text-ink-soft hover:bg-ochre/32 hover:border-ochre/48 hover:text-ink hover:shadow-bubble transition-all disabled:opacity-50 animate-fade-up"
+                className="group flex items-center gap-2 text-[13.5px] px-4 py-2 rounded-full bg-ochre/10 border border-ochre/25 text-ink-soft hover:bg-ochre/10 hover:border-ochre/30 hover:text-ink hover:shadow-bubble transition-all disabled:opacity-50 animate-fade-up"
               >
-                <s.Icon className="w-3.5 h-3.5 text-ochre/80 group-hover:text-ochre-dark transition-colors" />
+                <s.Icon className="w-3.5 h-3.5 text-ochre-dark/85 group-hover:text-ochre-dark transition-colors" />
                 <span className="font-sans">{s.text}</span>
               </button>
             ))}

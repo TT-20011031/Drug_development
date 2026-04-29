@@ -18,6 +18,7 @@ interface HistorySidebarProps {
   onSelectConversation: (sessionId: string) => void;
   onNewConversation: () => void;
   refreshTrigger: number;
+  generatingSessionIds?: Set<string>;
 }
 
 const INTENT_BADGES: Record<string, { label: string; color: string }> = {
@@ -44,6 +45,7 @@ export function HistorySidebar({
   onSelectConversation,
   onNewConversation,
   refreshTrigger,
+  generatingSessionIds,
 }: HistorySidebarProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [collapsed, setCollapsed] = useState(false);
@@ -132,6 +134,7 @@ export function HistorySidebar({
           conversations.map((conv, idx) => {
             const isActive = conv.session_id === currentSessionId;
             const badge = INTENT_BADGES[conv.intent];
+            const isGenerating = generatingSessionIds?.has(conv.session_id) ?? false;
             return (
               <button
                 key={conv.session_id}
@@ -149,7 +152,7 @@ export function HistorySidebar({
                   {/* Manuscript numeral */}
                   <span
                     className={`font-mono text-[11px] mt-0.5 flex-shrink-0 tracking-tight ${
-                      isActive ? "text-cinnabar" : "text-qing-deep/45"
+                      isActive || isGenerating ? "text-cinnabar" : "text-qing-deep/45"
                     }`}
                   >
                     {(idx + 1).toString().padStart(2, "0")}
@@ -163,10 +166,17 @@ export function HistorySidebar({
                       {conv.title}
                     </div>
                     <div className="flex items-center gap-1.5 mt-1.5">
-                      {badge && (
-                        <span className={`text-[10.5px] px-2 py-[1px] rounded-full tracking-wide ${badge.color}`}>
-                          {badge.label}
+                      {isGenerating ? (
+                        <span className="inline-flex items-center gap-1 text-[10.5px] px-2 py-[1px] rounded-full tracking-wide bg-cinnabar/10 text-cinnabar border border-cinnabar/30">
+                          <span className="w-1.5 h-1.5 bg-cinnabar rounded-full animate-pulse" />
+                          生成中
                         </span>
+                      ) : (
+                        badge && (
+                          <span className={`text-[10.5px] px-2 py-[1px] rounded-full tracking-wide ${badge.color}`}>
+                            {badge.label}
+                          </span>
+                        )
                       )}
                       <span className="text-[10.5px] text-ink-faint font-serif">
                         {formatTime(conv.updated_at)}

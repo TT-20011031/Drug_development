@@ -40,6 +40,7 @@ export default function Home() {
   const [chatResponse, setChatResponse] = useState<string>("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [historyRefresh, setHistoryRefresh] = useState(0);
+  const [generatingSessionIds, setGeneratingSessionIds] = useState<Set<string>>(new Set());
   const [savedPipelineSteps, setSavedPipelineSteps] = useState<PipelineStep[] | null>(null);
   const [savedActiveStepId, setSavedActiveStepId] = useState<string>("");
   const [userInput, setUserInput] = useState<string>("");
@@ -49,6 +50,23 @@ export default function Home() {
 
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
+
+  const addGenerating = useCallback((sid: string) => {
+    setGeneratingSessionIds((prev) => {
+      if (prev.has(sid)) return prev;
+      const next = new Set(prev);
+      next.add(sid);
+      return next;
+    });
+  }, []);
+  const removeGenerating = useCallback((sid: string) => {
+    setGeneratingSessionIds((prev) => {
+      if (!prev.has(sid)) return prev;
+      const next = new Set(prev);
+      next.delete(sid);
+      return next;
+    });
+  }, []);
 
   const sessionsRef = useRef(new Map<string, SessionData>());
   const displayedSessionRef = useRef("");
@@ -205,6 +223,7 @@ export default function Home() {
       setSessionId(sid);
       setStarted(true);
       setViewMode("chat");
+      addGenerating(sid);
       syncToUI(buf);
 
       streamChat(
@@ -213,7 +232,11 @@ export default function Home() {
         (event, data) => {
           const b = sessionsRef.current.get(sid);
           if (!b) return;
-          if (event === "session") return;
+          if (event === "session") {
+            // 后端已写入对话行，立即刷新左侧研发札记，让生成中的对话立刻出现
+            setHistoryRefresh((n) => n + 1);
+            return;
+          }
 
           applyEvent(b, event, data);
           if (event === "complete") setHistoryRefresh((n) => n + 1);
@@ -232,12 +255,14 @@ export default function Home() {
             setErrorMsg(`\u8fde\u63a5\u9519\u8bef\uff1a${error.message}`);
             setIsLoading(false);
           }
+          removeGenerating(sid);
         },
         () => {
           const b = sessionsRef.current.get(sid);
           if (b) b.isLoading = false;
           if (displayedSessionRef.current === sid) setIsLoading(false);
           abortControllersRef.current.delete(sid);
+          removeGenerating(sid);
         },
         {
           signal: controller.signal,
@@ -249,12 +274,13 @@ export default function Home() {
             b.isLoading = false;
             b.paused = { lastUserInput: b.userInput };
             abortControllersRef.current.delete(sid);
+            removeGenerating(sid);
             if (displayedSessionRef.current === sid) syncToUI(b);
           },
         }
       );
     },
-    [sessionId, applyEvent, syncToUI]
+    [sessionId, applyEvent, syncToUI, addGenerating, removeGenerating]
   );
 
   // 暂停当前生成
@@ -275,6 +301,7 @@ export default function Home() {
     buf.isLoading = true;
     buf.paused = null;
     buf.errorMsg = "";
+    addGenerating(sid);
     syncToUI(buf);
 
     const controller = new AbortController();
@@ -285,7 +312,10 @@ export default function Home() {
       (event, data) => {
         const b = sessionsRef.current.get(sid);
         if (!b) return;
-        if (event === "session") return;
+        if (event === "session") {
+          setHistoryRefresh((n) => n + 1);
+          return;
+        }
         applyEvent(b, event, data);
         if (event === "complete") setHistoryRefresh((n) => n + 1);
         if (displayedSessionRef.current === sid) syncToUI(b);
@@ -300,12 +330,14 @@ export default function Home() {
           setErrorMsg(`\u8fde\u63a5\u9519\u8bef\uff1a${error.message}`);
           setIsLoading(false);
         }
+        removeGenerating(sid);
       },
       () => {
         const b = sessionsRef.current.get(sid);
         if (b) b.isLoading = false;
         if (displayedSessionRef.current === sid) setIsLoading(false);
         abortControllersRef.current.delete(sid);
+        removeGenerating(sid);
       },
       {
         signal: controller.signal,
@@ -315,11 +347,12 @@ export default function Home() {
           b.isLoading = false;
           b.paused = { lastUserInput: b.userInput };
           abortControllersRef.current.delete(sid);
+          removeGenerating(sid);
           if (displayedSessionRef.current === sid) syncToUI(b);
         },
       }
     );
-  }, [applyEvent, syncToUI]);
+  }, [applyEvent, syncToUI, addGenerating, removeGenerating]);
 
   // 修改问题：把暂停时的输入回填到对话框，等待用户编辑后发送（带 reset_pending=true）
   const handleModify = useCallback(() => {
@@ -496,6 +529,7 @@ export default function Home() {
           onSelectConversation={loadConversation}
           onNewConversation={handleNewConversation}
           refreshTrigger={historyRefresh}
+          generatingSessionIds={generatingSessionIds}
         />
 
         {!started ? (

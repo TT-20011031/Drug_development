@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, FileText, Pause } from "lucide-react";
+import { AlertCircle, FileText, Leaf, Pause } from "lucide-react";
 import { PipelineStep } from "@/lib/types";
 
 interface ProgressBubbleProps {
@@ -29,8 +29,9 @@ export function ProgressBubble({
 
   return (
     <div className="flex justify-start animate-ink-bleed">
-      <div className="seal-ring w-9 h-9 bg-cinnabar flex items-center justify-center flex-shrink-0 mt-1 mr-3">
-        <span className="font-serif text-bone text-[13px] leading-none">寿</span>
+      <div className="seal-ring relative w-9 h-9 rounded-md bg-cinnabar/85 border border-cinnabar-dark/40 flex items-center justify-center flex-shrink-0 mt-1 mr-3 rotate-3 shadow-bubble">
+        <span className="absolute inset-[3px] rounded-[3px] border border-bone/25 pointer-events-none" />
+        <Leaf className="w-4 h-4 text-bone" strokeWidth={1.6} />
       </div>
       <div className="max-w-[80%] bg-paper-warm border border-ochre/20 rounded-2xl rounded-tl-sm shadow-bubble px-5 py-4 relative">
         {/* Subtle cinnabar accent strip */}
@@ -145,8 +146,9 @@ interface ThinkingBubbleProps {
 export function ThinkingBubble({ onPause }: ThinkingBubbleProps) {
   return (
     <div className="flex justify-start animate-ink-bleed">
-      <div className="seal-ring w-9 h-9 bg-cinnabar flex items-center justify-center flex-shrink-0 mt-1 mr-3">
-        <span className="font-serif text-bone text-[13px] leading-none">寿</span>
+      <div className="seal-ring relative w-9 h-9 rounded-md bg-cinnabar/85 border border-cinnabar-dark/40 flex items-center justify-center flex-shrink-0 mt-1 mr-3 rotate-3 shadow-bubble">
+        <span className="absolute inset-[3px] rounded-[3px] border border-bone/25 pointer-events-none" />
+        <Leaf className="w-4 h-4 text-bone" strokeWidth={1.6} />
       </div>
       <div className="bg-paper-warm border border-ochre/20 rounded-2xl rounded-tl-sm shadow-bubble px-5 py-3.5 flex items-center gap-3 relative">
         <span className="absolute left-0 top-3 bottom-3 w-[2px] bg-cinnabar/30 rounded-r" />

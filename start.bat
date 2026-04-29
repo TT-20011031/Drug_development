@@ -21,7 +21,7 @@ echo    Done.
 
 echo.
 echo [2/4] Starting backend on port 9603...
-start "Backend-9603" /min /d "%RD%backend" .venv\Scripts\python.exe main.py
+start "Backend-9603" /min /d "%RD%backend" .venv_local\Scripts\python.exe main.py
 
 echo [3/4] Waiting for backend...
 ping 127.0.0.1 -n 4 >nul

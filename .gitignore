@@ -4,6 +4,7 @@ frontend/out/
 frontend/dist/
 backend/venv/
 backend/.venv/
+backend/.venv_local/
 backend/__pycache__/
 backend/data/*.db
 backend/data/*.sqlite

@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 
 import ReactMarkdown from "react-markdown";
 
-import { FileText } from "lucide-react";
+import { FileText, Feather, Leaf } from "lucide-react";
 
 import { PipelineStep } from "@/lib/types";
 
@@ -122,9 +122,11 @@ export function ChatMessages({
 
           {msg.role === "assistant" && (
 
-            <div className="seal-ring w-8 h-8 bg-cinnabar flex items-center justify-center flex-shrink-0 mt-1 mr-3">
+            <div className="seal-ring relative w-9 h-9 rounded-md bg-cinnabar/85 border border-cinnabar-dark/40 flex items-center justify-center flex-shrink-0 mt-1 mr-3 rotate-3 shadow-bubble">
 
-              <span className="font-serif text-bone text-[12px] leading-none">寿</span>
+              <span className="absolute inset-[3px] rounded-[3px] border border-bone/25 pointer-events-none" />
+
+              <Leaf className="w-4 h-4 text-bone" strokeWidth={1.6} />
 
             </div>
 
@@ -134,8 +136,8 @@ export function ChatMessages({
 
             className={`max-w-[75%] text-[14px] leading-[1.85] rounded-2xl ${
               msg.role === "user"
-                ? "bg-ochre/45 text-ink border border-ochre/65 rounded-tr-md px-4 py-3 ml-auto shadow-bubble"
-                : "bg-qing/30 border border-qing/50 text-ink rounded-tl-md px-5 py-4 relative shadow-bubble"
+                ? "bg-ochre/28 text-ink border border-ochre/45 rounded-tr-md px-4 py-3 ml-auto shadow-bubble"
+                : "bg-qing/16 border border-qing/32 text-ink rounded-tl-md px-5 py-4 relative shadow-bubble"
             }`}
 
           >
@@ -218,9 +220,11 @@ export function ChatMessages({
 
           {msg.role === "user" && (
 
-            <div className="w-8 h-8 border border-ink/30 flex items-center justify-center flex-shrink-0 mt-1 ml-3 bg-paper-light/60">
+            <div className="relative w-9 h-9 rounded-md bg-paper-light/80 border border-ink/35 flex items-center justify-center flex-shrink-0 mt-1 ml-3 -rotate-3 shadow-bubble">
 
-              <span className="font-serif text-ink text-[12px] leading-none">问</span>
+              <span className="absolute inset-[3px] rounded-[3px] border border-ink/20 pointer-events-none" />
+
+              <Feather className="w-4 h-4 text-ink-soft" strokeWidth={1.6} />
 
             </div>
 

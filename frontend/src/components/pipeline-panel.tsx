@@ -86,12 +86,12 @@ export function PipelinePanel({
                       href={pdfUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group mt-4 mx-3 flex items-center gap-2.5 bg-cinnabar/55 text-cinnabar-dark border border-cinnabar/75 rounded-full pl-5 pr-1.5 py-1.5 hover:bg-cinnabar/70 hover:border-cinnabar/90 shadow-bubble transition-all"
+                      className="group mt-4 mx-3 flex items-center gap-2.5 bg-cinnabar/20 text-cinnabar-dark border border-cinnabar/40 rounded-full pl-5 pr-1.5 py-1.5 hover:bg-cinnabar/35 hover:border-cinnabar/60 shadow-bubble transition-all"
                     >
                       <span className="flex-1 font-serif text-[13.5px] tracking-[0.1em]">
                         下载研发报告
                       </span>
-                      <span className="bg-cinnabar group-hover:bg-cinnabar-light w-9 h-9 rounded-full flex items-center justify-center text-paper-light transition-colors flex-shrink-0">
+                      <span className="bg-cinnabar/35 group-hover:bg-cinnabar w-9 h-9 rounded-full flex items-center justify-center text-paper-light transition-colors flex-shrink-0">
                         <Download className="w-4 h-4" />
                       </span>
                     </a>
