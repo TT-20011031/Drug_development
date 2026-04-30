@@ -7,6 +7,8 @@ backend/.venv/
 backend/.venv_local/
 backend/__pycache__/
 backend/data/*.db
+backend/data/*.db-shm
+backend/data/*.db-wal
 backend/data/*.sqlite
 backend/data/*.sqlite3
 backend/.env
@@ -15,3 +17,5 @@ backend/.env
 *.log
 .DS_Store
 Thumbs.db
+.windsurf/
+backend/generated_docs/
