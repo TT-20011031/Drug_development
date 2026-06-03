@@ -47,6 +47,7 @@ export default function Home() {
   const [pausedInfo, setPausedInfo] = useState<{ lastUserInput: string } | null>(null);
   const [pinnedStepId, setPinnedStepId] = useState<string | null>(null);
   const [prefillInput, setPrefillInput] = useState<{ text: string; token: number } | null>(null);
+  const [autoUploadToDeludata, setAutoUploadToDeludata] = useState(false);
 
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
@@ -145,6 +146,12 @@ export default function Home() {
         buf.savedActiveStepId =
           buf.steps.find((s) => s.id === "product_spec" && s.status !== "pending")?.id ||
           buf.steps.filter((s) => s.status === "done").pop()?.id || "";
+        const upload = data.deludata_upload;
+        const uploadLine = upload?.enabled
+          ? upload.ok
+            ? `\n\n📚 已上传至知识库：${upload.folder_path || "研发部/新药研发报告"}`
+            : `\n\n⚠️ 知识库上传失败：${upload.message || "请检查 DeluData_pro 配置"}`
+          : "";
         // revise / followup / chitchat 完成时不再追加前端默认总结，由后端 chat_reply 控制
         const intent = data.intent || "";
         const isFreshReport = intent === "research" || intent === "optimize" || intent === "";
@@ -156,9 +163,11 @@ export default function Home() {
             const stepList = doneSteps.map((s) => s.label).join(" \u2192 ");
             const summary = `\u2705 **\u7814\u53d1\u62a5\u544a\u5df2\u751f\u6210**\uff08${stepList}\uff09\n\n${
               data.doc_url ? "\ud83d\udcc4 PDF \u62a5\u544a\u53ef\u4e0b\u8f7d\u3002" : ""
-            }\u53ef\u4ee5\u7ee7\u7eed\u8ffd\u95ee\u5bf9\u62a5\u544a\u5185\u5bb9\u8fdb\u884c\u4fee\u6539\u6216\u8865\u5145\u3002`;
+            }\u53ef\u4ee5\u7ee7\u7eed\u8ffd\u95ee\u5bf9\u62a5\u544a\u5185\u5bb9\u8fdb\u884c\u4fee\u6539\u6216\u8865\u5145\u3002${uploadLine}`;
             buf.chatMessages = [...buf.chatMessages, { role: "assistant" as const, content: summary, timestamp: Date.now() }];
           }
+        } else if (uploadLine) {
+          buf.chatMessages = [...buf.chatMessages, { role: "assistant" as const, content: uploadLine.trim(), timestamp: Date.now() }];
         }
         break;
       }
@@ -185,8 +194,9 @@ export default function Home() {
   }, []);
 
   const handleSend = useCallback(
-    (message: string, opts: { resetPending?: boolean } = {}) => {
+    (message: string, opts: { resetPending?: boolean; autoUploadToDeludata?: boolean } = {}) => {
       const sid = sessionId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+      const uploadEnabled = opts.autoUploadToDeludata ?? autoUploadToDeludata;
 
       const freshSteps = PIPELINE_STEPS.map((s) => ({ ...s }));
       const existingBuf = sessionsRef.current.get(sid);
@@ -267,6 +277,7 @@ export default function Home() {
         {
           signal: controller.signal,
           resetPending: opts.resetPending === true,
+          autoUploadToDeludata: uploadEnabled,
           onAbort: () => {
             // 用户主动暂停：保留当前 steps 状态，转入 paused 视觉态
             const b = sessionsRef.current.get(sid);
@@ -280,7 +291,7 @@ export default function Home() {
         }
       );
     },
-    [sessionId, applyEvent, syncToUI, addGenerating, removeGenerating]
+    [sessionId, autoUploadToDeludata, applyEvent, syncToUI, addGenerating, removeGenerating]
   );
 
   // 暂停当前生成
@@ -341,6 +352,7 @@ export default function Home() {
       },
       {
         signal: controller.signal,
+        autoUploadToDeludata,
         onAbort: () => {
           const b = sessionsRef.current.get(sid);
           if (!b) return;
@@ -352,7 +364,7 @@ export default function Home() {
         },
       }
     );
-  }, [applyEvent, syncToUI, addGenerating, removeGenerating]);
+  }, [autoUploadToDeludata, applyEvent, syncToUI, addGenerating, removeGenerating]);
 
   // 修改问题：把暂停时的输入回填到对话框，等待用户编辑后发送（带 reset_pending=true）
   const handleModify = useCallback(() => {
@@ -540,7 +552,12 @@ export default function Home() {
 
         {!started ? (
           /* Landing page */
-          <LandingInput onSend={handleSend} isLoading={isLoading} />
+          <LandingInput
+            onSend={handleSend}
+            isLoading={isLoading}
+            autoUploadToDeludata={autoUploadToDeludata}
+            onAutoUploadChange={setAutoUploadToDeludata}
+          />
         ) : viewMode === "report" && canViewReport ? (
           <>
             {/* Left: Pipeline Panel */}
@@ -615,6 +632,8 @@ export default function Home() {
           onSend={handleChatInputSend}
           isLoading={isLoading}
           prefill={prefillInput}
+          autoUploadToDeludata={autoUploadToDeludata}
+          onAutoUploadChange={setAutoUploadToDeludata}
         />
       )}
     </div>

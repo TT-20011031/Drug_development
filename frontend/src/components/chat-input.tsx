@@ -1,15 +1,23 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, UploadCloud } from "lucide-react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
   isLoading: boolean;
   prefill?: { text: string; token: number } | null;
+  autoUploadToDeludata: boolean;
+  onAutoUploadChange: (enabled: boolean) => void;
 }
 
-export function ChatInput({ onSend, isLoading, prefill }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  isLoading,
+  prefill,
+  autoUploadToDeludata,
+  onAutoUploadChange,
+}: ChatInputProps) {
   const [input, setInput] = useState("");
   const [focused, setFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -82,6 +90,22 @@ export function ChatInput({ onSend, isLoading, prefill }: ChatInputProps) {
               </span>
             </div>
           )}
+          <div className="mb-2.5 flex items-center justify-end">
+            <button
+              type="button"
+              aria-pressed={autoUploadToDeludata}
+              onClick={() => onAutoUploadChange(!autoUploadToDeludata)}
+              disabled={isLoading}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-serif tracking-[0.12em] transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                autoUploadToDeludata
+                  ? "border-qing-deep/40 bg-qing-deep/10 text-qing-deep shadow-bubble"
+                  : "border-ink/12 bg-paper-warm/45 text-ink-mute hover:border-ochre/45 hover:text-ochre-dark"
+              }`}
+            >
+              <UploadCloud className="h-3.5 w-3.5" strokeWidth={1.7} />
+              <span>上传知识库</span>
+            </button>
+          </div>
           <div className="flex items-end gap-3">
             <textarea
               ref={textareaRef}
@@ -140,4 +164,3 @@ export function ChatInput({ onSend, isLoading, prefill }: ChatInputProps) {
     </div>
   );
 }
-

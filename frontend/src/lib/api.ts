@@ -3,6 +3,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 export interface StreamChatOptions {
   signal?: AbortSignal;
   resetPending?: boolean;
+  autoUploadToDeludata?: boolean;
   onAbort?: () => void;
 }
 
@@ -16,7 +17,12 @@ export async function streamChat(
 ) {
   return _streamPost(
     "/api/chat",
-    { message, session_id: sessionId, reset_pending: options.resetPending === true },
+    {
+      message,
+      session_id: sessionId,
+      reset_pending: options.resetPending === true,
+      auto_upload_to_deludata: options.autoUploadToDeludata === true,
+    },
     onEvent,
     onError,
     onComplete,
@@ -33,7 +39,10 @@ export async function streamResume(
 ) {
   return _streamPost(
     "/api/chat/resume",
-    { session_id: sessionId },
+    {
+      session_id: sessionId,
+      auto_upload_to_deludata: options.autoUploadToDeludata === true,
+    },
     onEvent,
     onError,
     onComplete,

@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -15,11 +16,42 @@ from sse_starlette.sse import EventSourceResponse
 from graph import get_compiled_graph
 from output.pdf_export import markdown_to_pdf
 from db import init_db, create_conversation, update_conversation, list_conversations, get_conversation, delete_conversation
+from deludata_upload import upload_pdf_to_deludata
 
 load_dotenv(override=True)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("product_dev")
+
+INVALID_FILENAME_CHARS = re.compile(r'[\\/:*?"<>|\r\n\t]+')
+
+
+def _extract_product_name(product_spec: str, final_markdown: str = "") -> str:
+    candidates = [product_spec, final_markdown]
+    for text in candidates:
+        for line in (text or "").splitlines():
+            stripped = line.strip()
+            heading = re.match(r"^#(?!#)\s*(.+)$", stripped)
+            if heading:
+                name = heading.group(1).strip()
+                if name:
+                    return name
+            match = re.match(r"[-*]?\s*(?:\*\*)?产品名称(?:\*\*)?\s*[:：]\s*(.+)", stripped)
+            if match:
+                name = match.group(1).strip().strip("*")
+                if name:
+                    return name
+    return "产品"
+
+
+def _build_report_upload_filename(product_spec: str, final_markdown: str = "") -> str:
+    product_name = _extract_product_name(product_spec, final_markdown)
+    product_name = re.sub(r"\s+", "", product_name)
+    product_name = re.sub(r"(?:产品)?研发报告$", "", product_name)
+    product_name = INVALID_FILENAME_CHARS.sub("", product_name).strip(" .")
+    if not product_name:
+        product_name = "产品"
+    return f"{product_name}研发报告.pdf"
 
 STEP_LABELS = {
     "router": "智能理解",
@@ -104,9 +136,10 @@ app.add_middleware(
 )
 
 sessions: dict[str, str] = {}
+session_upload_flags: dict[str, bool] = {}
 
 
-def _build_event_generator(session_id: str, input_state):
+def _build_event_generator(session_id: str, input_state, auto_upload_to_deludata: bool = False):
     """构造 SSE 事件生成器。
     - input_state 为 dict 时，按新输入启动 graph
     - input_state 为 None 时，从 checkpoint 恢复（resume）
@@ -344,9 +377,11 @@ def _build_event_generator(session_id: str, input_state):
 
             final_intent = (state_vals.get("intent") or (final_state or {}).get("intent") or "")
             final_md = state_vals.get("final_markdown", "") or (final_state or {}).get("final_markdown", "")
+            product_spec = state_vals.get("product_spec", "") or (final_state or {}).get("product_spec", "")
 
             pdf_path = None
             doc_id = None
+            deludata_upload = None
             # 仅当走到完整报告产出时（research/optimize/revise）才重生 PDF
             if final_md and final_intent in ("research", "optimize", "revise"):
                 doc_id = uuid.uuid4().hex[:8]
@@ -355,6 +390,12 @@ def _build_event_generator(session_id: str, input_state):
                 )
                 sessions[doc_id] = pdf_path
                 await update_conversation(session_id, pdf_path=pdf_path)
+                if auto_upload_to_deludata:
+                    upload_filename = _build_report_upload_filename(product_spec, final_md)
+                    deludata_upload = await upload_pdf_to_deludata(
+                        pdf_path,
+                        upload_filename=upload_filename,
+                    )
 
             # revise 完成时追加一条简短提示，便于前端聊天区显示
             if final_intent == "revise":
@@ -374,6 +415,7 @@ def _build_event_generator(session_id: str, input_state):
                         "doc_url": f"/api/download/{doc_id}" if doc_id else None,
                         "total_duration": total_elapsed,
                         "intent": final_intent,
+                        "deludata_upload": deludata_upload,
                     },
                     ensure_ascii=False,
                 ),
@@ -399,6 +441,7 @@ async def chat_endpoint(request: Request):
     user_input = body.get("message", "")
     session_id = body.get("session_id", str(uuid.uuid4()))
     reset_pending = bool(body.get("reset_pending", False))
+    auto_upload_to_deludata = bool(body.get("auto_upload_to_deludata", False))
 
     if not user_input.strip():
         return JSONResponse({"error": "消息不能为空"}, status_code=400)
@@ -409,6 +452,8 @@ async def chat_endpoint(request: Request):
         await create_conversation(session_id, title=title)
     else:
         await update_conversation(session_id)
+
+    session_upload_flags[session_id] = auto_upload_to_deludata
 
     # 用户在暂停后选择「修改问题」时，先把上一次未完成的 checkpoint 清掉，避免新输入被并到旧 pending 任务上
     if reset_pending and graph is not None:
@@ -426,7 +471,13 @@ async def chat_endpoint(request: Request):
         "revision_instruction": "",
         "followup_reply": "",
     }
-    return EventSourceResponse(_build_event_generator(session_id, input_state)())
+    return EventSourceResponse(
+        _build_event_generator(
+            session_id,
+            input_state,
+            auto_upload_to_deludata=auto_upload_to_deludata,
+        )()
+    )
 
 
 @app.post("/api/chat/resume")
@@ -435,6 +486,8 @@ async def chat_resume_endpoint(request: Request):
     session_id = body.get("session_id", "")
     if not session_id:
         return JSONResponse({"error": "session_id required"}, status_code=400)
+    if "auto_upload_to_deludata" in body:
+        session_upload_flags[session_id] = bool(body.get("auto_upload_to_deludata"))
 
     config = {"configurable": {"thread_id": session_id}}
 
@@ -468,7 +521,13 @@ async def chat_resume_endpoint(request: Request):
             }
         return EventSourceResponse(empty_gen())
 
-    return EventSourceResponse(_build_event_generator(session_id, None)())
+    return EventSourceResponse(
+        _build_event_generator(
+            session_id,
+            None,
+            auto_upload_to_deludata=session_upload_flags.get(session_id, False),
+        )()
+    )
 
 
 @app.get("/api/download/{doc_id}")

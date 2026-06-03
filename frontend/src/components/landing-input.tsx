@@ -8,6 +8,7 @@ import {
   Settings,
   Library,
   ArrowRight,
+  UploadCloud,
 } from "lucide-react";
 import { getFeaturedScenarios } from "@/lib/scenarios";
 import { ScenarioCard } from "./scenario-card";
@@ -16,6 +17,8 @@ import { ScenariosModal } from "./scenarios-modal";
 interface LandingInputProps {
   onSend: (message: string) => void;
   isLoading: boolean;
+  autoUploadToDeludata: boolean;
+  onAutoUploadChange: (enabled: boolean) => void;
 }
 
 const FEATURES: {
@@ -29,7 +32,12 @@ const FEATURES: {
   { serial: "04", Icon: Settings, title: "工程规格" },
 ];
 
-export function LandingInput({ onSend, isLoading }: LandingInputProps) {
+export function LandingInput({
+  onSend,
+  isLoading,
+  autoUploadToDeludata,
+  onAutoUploadChange,
+}: LandingInputProps) {
   const [input, setInput] = useState("");
   const [focused, setFocused] = useState(false);
   const [expandedScenarioId, setExpandedScenarioId] = useState<string | null>(
@@ -119,7 +127,21 @@ export function LandingInput({ onSend, isLoading }: LandingInputProps) {
             rows={3}
             className="w-full resize-none bg-transparent text-[16px] leading-[1.85] font-serif px-7 pt-7 pb-2 focus:outline-none disabled:text-ink-faint placeholder:text-ink-faint placeholder:italic placeholder:font-sans"
           />
-          <div className="flex items-center justify-end px-5 pb-4 pt-2">
+          <div className="flex flex-col gap-3 px-5 pb-4 pt-2 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              aria-pressed={autoUploadToDeludata}
+              onClick={() => onAutoUploadChange(!autoUploadToDeludata)}
+              disabled={isLoading}
+              className={`inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2 text-[13px] font-serif tracking-[0.14em] transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                autoUploadToDeludata
+                  ? "border-qing-deep/40 bg-qing-deep/10 text-qing-deep shadow-bubble"
+                  : "border-ink/12 bg-paper-warm/45 text-ink-mute hover:border-ochre/45 hover:text-ochre-dark"
+              }`}
+            >
+              <UploadCloud className="h-4 w-4" strokeWidth={1.7} />
+              <span>上传知识库</span>
+            </button>
             <button
               onClick={handleSubmit}
               disabled={!input.trim() || isLoading}
